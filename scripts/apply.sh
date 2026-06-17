@@ -51,6 +51,14 @@ echo ""
 IDE_CHOICE="${options[$selected]}"
 echo "Applying AI Guardrails for: $IDE_CHOICE..."
 
+# Prevent the script from running inside the ai-guardrails repository itself
+CURRENT_DIR="$(pwd)"
+if [ "$CURRENT_DIR" == "$GUARDRAILS_DIR" ]; then
+    echo -e "\033[1;31mError: You cannot apply guardrails inside the ai-guardrails repository itself.\033[0m"
+    echo "Please run this script from the root of your target project."
+    exit 1
+fi
+
 "$GUARDRAILS_DIR/scripts/remove.sh" > /dev/null 2>&1
 echo "Cleaning previous configurations (if any)..."
 

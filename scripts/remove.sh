@@ -1,5 +1,13 @@
 #!/bin/bash
 
+GUARDRAILS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+CURRENT_DIR="$(pwd)"
+
+if [ "$CURRENT_DIR" == "$GUARDRAILS_DIR" ]; then
+    # We do not print an error here because apply.sh calls remove.sh silently
+    exit 0
+fi
+
 echo "Removing AI Guardrails from this project..."
 
 for file in ".cursorrules" ".traerules" "AGENTS.md" "GEMINI.md" "CLAUDE.md"; do
