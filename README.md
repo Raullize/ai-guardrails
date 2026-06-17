@@ -1,33 +1,42 @@
 # AI Guardrails
 
-Repositório centralizado de governança, regras e capacidades para otimização de assistentes de IA (Trae, OpenCode, Cursor). Focado em redução de custo de tokens, consistência arquitetural e eliminação de padrões visuais genéricos de IA.
+Centralized repository for governance, rules, and capabilities to optimize AI assistants (Trae, OpenCode, Cursor, Windsurf, Claude Code). Focused on reducing token costs, ensuring architectural consistency, and eliminating generic AI visual patterns.
 
-## Estrutura do Repositório
+## Repository Structure
 
-- rules/: Diretrizes de estilo e restrições de segurança (o "como" escrever).
-- skills/: Blocos de instruções especializados em tarefas específicas (ex: gerador de novas skills).
-- template/: Modelos base para a criação de novos componentes de IA.
+- `rules/`: Style guidelines and safety constraints (the "how" to write).
+- `skills/`: Specialized instruction blocks for specific tasks (e.g., frontend humanization, refactoring).
+- `scripts/`: Automation scripts to inject rules into projects without polluting the Git tree.
+- `template/`: Base templates for creating new AI components.
 
-## Configuração e Uso Local
+## Local Setup and Usage
 
-Para utilizar estas configurações em qualquer repositório local sem duplicar arquivos, **sem sujar o repositório e sem alterar o `.gitignore`**, utilize os scripts de automação.
+To use these settings in any local repository without duplicating files, **without polluting the repository, and without changing `.gitignore`**, use the automation scripts.
 
-Eles usam um recurso chamado `.git/info/exclude`, que ignora os arquivos das regras apenas na sua máquina local.
+They use a feature called `.git/info/exclude`, which ignores the rule files only on your local machine.
 
-### Para ativar as regras em um projeto:
-Vá até a pasta do projeto que você quer configurar e rode:
+### To enable rules in a project:
+**On Linux / Mac (or Git Bash on Windows):**
+Go to the project folder you want to configure and run the script using the absolute path to where you cloned this repository. For example, if you cloned it in your `~/Projects` folder:
 ```bash
 ~/Projects/ai-guardrails/scripts/apply.sh
 ```
-Isso criará um link simbólico invisível para o Git.
+*(Note: The script automatically discovers where `ai-guardrails` is installed based on the path you typed to execute it, so it will always create the correct shortcuts regardless of where the repository was saved).*
 
-### Para desativar as regras:
-Se quiser remover as configurações de IA do projeto:
+**On Windows (PowerShell/CMD):**
+For pure Windows users (who do not use Git Bash or WSL), the `.sh` script will not run natively. In this case, we recommend using Git Bash or WSL to run the script. If you want to run it natively, an equivalent `.ps1` script needs to be created (coming soon).
+
+### To disable rules:
+If you want to remove the AI settings from the project:
 ```bash
 ~/Projects/ai-guardrails/scripts/remove.sh
 ```
 
-## Diretrizes de Desempenho e Custo
+## Roadmap and Future
 
-1. Respostas Diretas: Toda instrução deve forçar a IA a omitir saudações e explicações redundantes, economizando tokens de saída.
-2. Isolamento de Contexto: Ao criar links simbólicos apenas para as regras necessárias da stack do projeto atual, evita-se o envio de contextos massivos e irrelevantes para a API.
+- [ ] **Dynamic Injection by Stack:** Evolve the `apply.sh` script to ask not only for the IDE but also for the project's Stack (e.g., Spring Boot, .NET, NestJS, React). This way, the script will inject only the *skills* and rules relevant to that language, saving tokens and avoiding context conflicts in the AI.
+
+## Performance and Cost Guidelines
+
+1. **Direct Responses:** Every instruction must force the AI to omit greetings and redundant explanations, saving output tokens.
+2. **Context Isolation:** By creating symbolic links only for the necessary rules of the current project's stack, massive and irrelevant contexts are prevented from being sent to the API.
