@@ -2,14 +2,14 @@
 
 echo "Removing AI Guardrails from this project..."
 
-for file in ".cursorrules" ".traerules" ".windsurfrules" ".opencoderules" "claudecode.md"; do
+for file in ".cursorrules" ".traerules" ".windsurfrules" ".opencoderules" ".antigravityrules" "claudecode.md"; do
     if [ -L "$file" ] || [ -f "$file" ]; then
         rm -f "$file"
         echo "File/Symlink $file removed."
     fi
 done
 
-for dir in ".cursor" ".trae" ".windsurf" ".opencode" ".claude"; do
+for dir in ".cursor" ".trae" ".windsurf" ".opencode" ".claude" ".antigravity"; do
     if [ -L "$dir/skills" ] || [ -d "$dir/skills" ]; then
         rm -rf "$dir/skills"
         echo "Folder/Symlink $dir/skills removed."
@@ -22,11 +22,13 @@ if [ -d ".git" ] && [ -f ".git/info/exclude" ]; then
     sed '/^\.traerules$/d' | \
     sed '/^\.windsurfrules$/d' | \
     sed '/^\.opencoderules$/d' | \
+    sed '/^\.antigravityrules$/d' | \
     sed '/^claudecode\.md$/d' | \
     sed '/^\.cursor\/$/d' | \
     sed '/^\.trae\/$/d' | \
     sed '/^\.windsurf\/$/d' | \
     sed '/^\.opencode\/$/d' | \
+    sed '/^\.antigravity\/$/d' | \
     sed '/^\.claude\/$/d' > .git/info/exclude.tmp
     
     mv .git/info/exclude.tmp .git/info/exclude
