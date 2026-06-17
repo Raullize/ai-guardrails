@@ -2,7 +2,7 @@
 
 GUARDRAILS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-options=("Trae" "Cursor" "Windsurf" "OpenCode" "Claude Code" "AntiGravity" "Other / Default (.cursorrules)")
+options=("Trae" "Cursor" "OpenCode" "Claude Code" "AntiGravity" "Other / Default (.cursorrules)")
 selected=0
 
 tput civis 2>/dev/null
@@ -63,21 +63,17 @@ case $IDE_CHOICE in
         FOLDER_NAME=".cursor"
         RULE_NAME=".cursorrules"
         ;;
-    "Windsurf")
-        FOLDER_NAME=".windsurf"
-        RULE_NAME=".windsurfrules"
-        ;;
     "OpenCode")
         FOLDER_NAME=".opencode"
-        RULE_NAME=".opencoderules"
+        RULE_NAME="AGENTS.md"
         ;;
     "Claude Code")
         FOLDER_NAME=".claude"
-        RULE_NAME="claudecode.md"
+        RULE_NAME="CLAUDE.md"
         ;;
     "AntiGravity")
         FOLDER_NAME=".antigravity"
-        RULE_NAME=".antigravityrules"
+        RULE_NAME="GEMINI.md"
         ;;
     "Other / Default (.cursorrules)")
         FOLDER_NAME=".cursor"
