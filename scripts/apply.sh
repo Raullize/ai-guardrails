@@ -13,7 +13,7 @@ print_menu() {
         tput cuu $((${#options[@]} + 1)) 2>/dev/null
     fi
     
-    echo -e "$(tput el 2>/dev/null)Which IDE are you using in this project? (Use Up/Down arrows and press Enter)"
+    echo -e "$(tput el 2>/dev/null)Which AI Assistant or IDE are you using in this project? (Use Up/Down arrows and press Enter)"
     
     for i in "${!options[@]}"; do
         if [ $i -eq $selected ]; then
