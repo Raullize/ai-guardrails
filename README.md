@@ -1,6 +1,6 @@
 # AI Guardrails
 
-Centralized repository for governance, rules, and capabilities to optimize AI assistants (Trae, OpenCode, Cursor, Windsurf, Claude Code). Focused on reducing token costs, ensuring architectural consistency, and eliminating generic AI visual patterns.
+Centralized repository for governance, rules, and capabilities to optimize AI assistants (Trae, OpenCode, Cursor, AntiGravity, Claude Code). Focused on reducing token costs, ensuring architectural consistency, and eliminating generic AI visual patterns.
 
 ## Repository Structure
 
@@ -36,7 +36,10 @@ If you want to remove the AI settings from the project:
 
 - [ ] **Dynamic Injection by Stack:** Evolve the `apply.sh` script to ask not only for the IDE but also for the project's Stack (e.g., Spring Boot, .NET, NestJS, React). This way, the script will inject only the *skills* and rules relevant to that language, saving tokens and avoiding context conflicts in the AI.
 
-## Performance and Cost Guidelines
+## Important Notice: Ecosystem Volatility (Mid-2026)
 
-1. **Direct Responses:** Every instruction must force the AI to omit greetings and redundant explanations, saving output tokens.
-2. **Context Isolation:** By creating symbolic links only for the necessary rules of the current project's stack, massive and irrelevant contexts are prevented from being sent to the API.
+> **Note:** As of June 17, 2026, the AI coding assistant ecosystem (Trae, AntiGravity, OpenCode, Claude Code, etc.) is evolving rapidly. **There is still no universal standard** for naming system prompt files (e.g., `.cursorrules`, `AGENTS.md`, `GEMINI.md`) or skill directories. 
+> 
+> Because of this, the mapping created by the `apply.sh` script might become outdated if a specific IDE releases an update that changes its required folder structure or file name.
+> 
+> If you notice that an assistant is no longer reading the rules or loading the skills, please **open an Issue** in this repository so we can update the automation script with the new standard!
