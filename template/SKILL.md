@@ -4,3 +4,7 @@ description: Replace with description of the skill and when you should use it.
 ---
 
 # Insert instructions below
+
+<instructions>
+
+</instructions>
