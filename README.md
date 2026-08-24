@@ -23,6 +23,17 @@ Go to the project folder you want to configure and run the script using the abso
 ```
 *(Note: The script automatically discovers where `ai-guardrails` is installed based on the path you typed to execute it, so it will always create the correct shortcuts regardless of where the repository was saved).*
 
+The script is interactive and applies a tool-specific mapping for both rules and skills:
+
+- `Trae`: `.trae/rules/ai-guardrails.md` and `.trae/skills`
+- `Cursor`: `.cursor/rules/ai-guardrails.md` and `.cursor/skills`
+- `OpenCode`: `AGENTS.md` and `.opencode/skills`
+- `Claude Code`: `CLAUDE.md` and `.claude/skills`
+- `AntiGravity`: `.agents/rules/ai-guardrails.md` and `.agents/skills`
+- `Other / Generic`: `AGENTS.md` and `.agents/skills`
+
+The `Other / Generic` option is the safest fallback for tools that follow the broader `AGENTS.md` / `.agents` ecosystem, but it is not guaranteed to work everywhere.
+
 **On Windows (PowerShell/CMD):**
 For pure Windows users (who do not use Git Bash or WSL), the `.sh` script will not run natively. In this case, we recommend using Git Bash or WSL to run the script. If you want to run it natively, an equivalent `.ps1` script needs to be created (coming soon).
 
@@ -31,6 +42,8 @@ If you want to remove the AI settings from the project:
 ```bash
 ~/Projects/ai-guardrails/scripts/remove.sh
 ```
+
+`remove.sh` only removes symlinks created by this setup. It does not delete real project files such as a native `AGENTS.md` or `CLAUDE.md` that already belongs to the target repository.
 
 ## Roadmap and Future
 
