@@ -1,8 +1,9 @@
 #!/bin/bash
 
 GUARDRAILS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+CURRENT_DIR="$(pwd)"
 
-options=("Trae" "Cursor" "OpenCode" "Claude Code" "AntiGravity" "Other / Default (.cursorrules)")
+options=("Trae" "Cursor" "OpenCode" "Claude Code" "AntiGravity" "Other / Generic")
 selected=0
 
 tput civis 2>/dev/null
@@ -12,9 +13,9 @@ print_menu() {
     if [ "$1" != "first" ]; then
         tput cuu $((${#options[@]} + 1)) 2>/dev/null
     fi
-    
-    echo -e "$(tput el 2>/dev/null)Which AI Assistant or IDE are you using in this project? (Use Up/Down arrows and press Enter)"
-    
+
+    echo -e "$(tput el 2>/dev/null)Which AI assistant or IDE are you using in this project? (Use Up/Down arrows and press Enter)"
+
     for i in "${!options[@]}"; do
         if [ $i -eq $selected ]; then
             echo -e "$(tput el 2>/dev/null) > \033[1;32m${options[$i]}\033[0m"
@@ -22,6 +23,28 @@ print_menu() {
             echo -e "$(tput el 2>/dev/null)   ${options[$i]}"
         fi
     done
+}
+
+assert_safe_target() {
+    local path="$1"
+
+    if [ -e "$path" ] && [ ! -L "$path" ]; then
+        echo -e "\033[1;31mError: $path already exists as a real file or directory.\033[0m"
+        echo "Refusing to overwrite existing project files."
+        exit 1
+    fi
+}
+
+add_git_exclude() {
+    local item="$1"
+
+    if [ ! -d ".git" ]; then
+        return
+    fi
+
+    if ! grep -Fxq "$item" .git/info/exclude 2>/dev/null; then
+        echo "$item" >> .git/info/exclude
+    fi
 }
 
 print_menu "first"
@@ -51,8 +74,6 @@ echo ""
 IDE_CHOICE="${options[$selected]}"
 echo "Applying AI Guardrails for: $IDE_CHOICE..."
 
-# Prevent the script from running inside the ai-guardrails repository itself
-CURRENT_DIR="$(pwd)"
 if [ "$CURRENT_DIR" == "$GUARDRAILS_DIR" ]; then
     echo -e "\033[1;31mError: You cannot apply guardrails inside the ai-guardrails repository itself.\033[0m"
     echo "Please run this script from the root of your target project."
@@ -64,44 +85,45 @@ echo "Cleaning previous configurations (if any)..."
 
 case $IDE_CHOICE in
     "Trae")
-        FOLDER_NAME=".trae"
-        RULE_NAME=".traerules"
+        RULE_PATH=".trae/rules/ai-guardrails.md"
+        SKILLS_PATH=".trae/skills"
         ;;
     "Cursor")
-        FOLDER_NAME=".cursor"
-        RULE_NAME=".cursorrules"
+        RULE_PATH=".cursor/rules/ai-guardrails.md"
+        SKILLS_PATH=".cursor/skills"
         ;;
     "OpenCode")
-        FOLDER_NAME=".opencode"
-        RULE_NAME="AGENTS.md"
+        RULE_PATH="AGENTS.md"
+        SKILLS_PATH=".opencode/skills"
         ;;
     "Claude Code")
-        FOLDER_NAME=".claude"
-        RULE_NAME="CLAUDE.md"
+        RULE_PATH="CLAUDE.md"
+        SKILLS_PATH=".claude/skills"
         ;;
     "AntiGravity")
-        FOLDER_NAME=".antigravity"
-        RULE_NAME="GEMINI.md"
+        RULE_PATH=".agents/rules/ai-guardrails.md"
+        SKILLS_PATH=".agents/skills"
         ;;
-    "Other / Default (.cursorrules)")
-        FOLDER_NAME=".cursor"
-        RULE_NAME=".cursorrules"
+    "Other / Generic")
+        RULE_PATH="AGENTS.md"
+        SKILLS_PATH=".agents/skills"
         ;;
 esac
 
-ln -sf "$GUARDRAILS_DIR/rules/global.md" "$RULE_NAME"
-echo "Rules symlink created: $RULE_NAME"
+assert_safe_target "$RULE_PATH"
+assert_safe_target "$SKILLS_PATH"
 
-mkdir -p "$FOLDER_NAME"
-ln -sfn "$GUARDRAILS_DIR/skills" "$FOLDER_NAME/skills"
-echo "Skills symlink created at: $FOLDER_NAME/skills"
+mkdir -p "$(dirname "$RULE_PATH")"
+ln -sfn "$GUARDRAILS_DIR/rules/global.md" "$RULE_PATH"
+echo "Rules symlink created: $RULE_PATH"
+
+mkdir -p "$(dirname "$SKILLS_PATH")"
+ln -sfn "$GUARDRAILS_DIR/skills" "$SKILLS_PATH"
+echo "Skills symlink created at: $SKILLS_PATH"
 
 if [ -d ".git" ]; then
-    for item in "$RULE_NAME" "$FOLDER_NAME/"; do
-        if ! grep -q "^${item}$" .git/info/exclude 2>/dev/null; then
-            echo "$item" >> .git/info/exclude
-        fi
-    done
+    add_git_exclude "$RULE_PATH"
+    add_git_exclude "$SKILLS_PATH"
     echo "Files hidden from Git locally (.git/info/exclude)."
 else
     echo "Warning: This directory is not a Git repository."
