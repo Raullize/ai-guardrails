@@ -1,58 +1,111 @@
 # AI Guardrails
 
-Centralized repository for governance, rules, and capabilities to optimize AI assistants (Trae, OpenCode, Cursor, AntiGravity, Claude Code). Focused on reducing token costs, ensuring architectural consistency, and eliminating generic AI visual patterns.
+A portable, stack-agnostic `.agents` template that configures an AI-assisted
+development environment in any project. It ships generic rules, skills and
+prompts that adapt to the project's niche and stack — you fill in the
+placeholders.
 
-## Repository Structure
+## What you get
 
-- `rules/`: Style guidelines and safety constraints (the "how" to write).
-- `skills/`: Specialized instruction blocks for specific tasks (e.g., frontend humanization, refactoring).
-- `scripts/`: Automation scripts to inject rules into projects without polluting the Git tree.
-- `template/`: Base templates for creating new AI components.
+- `.agents/AGENTS.md` — entry point for LLM assistants (Trae, OpenCode, Cursor,
+  Claude Code, Copilot, AntiGravity).
+- `.agents/rules/` — non-negotiable constraints, stack-independent (test-first,
+  evidence quality, no silent refactors, no hallucination, secrets, semantic
+  commits).
+- `.agents/skills/` — generic roles (council, docs, security audit, performance
+  audit).
+- `.agents/prompts/` — reusable procedure prompts, including
+  `initial-setup/PROMPT.md` with `[brackets]` placeholders to adapt the
+  project's niche and stack.
+- `optional/packs/` — stack-specific skills (Docker, React, frontend
+  humanization, SEO, UI-to-code, legacy modernization) installed only when
+  relevant.
 
-## Local Setup and Usage
+## Repository structure
 
-To use these settings in any local repository without duplicating files, **without polluting the repository, and without changing `.gitignore`**, use the automation scripts.
-
-They use a feature called `.git/info/exclude`, which ignores the rule files only on your local machine.
-
-### To enable rules in a project:
-**On Linux / Mac (or Git Bash on Windows):**
-Go to the project folder you want to configure and run the script using the absolute path to where you cloned this repository. For example, if you cloned it in your `~/Projects` folder:
-```bash
-~/Projects/ai-guardrails/scripts/apply.sh
 ```
-*(Note: The script automatically discovers where `ai-guardrails` is installed based on the path you typed to execute it, so it will always create the correct shortcuts regardless of where the repository was saved).*
-
-The script is interactive and applies a tool-specific mapping for both rules and skills:
-
-- `Trae`: `.trae/rules/ai-guardrails.md` and `.trae/skills`
-- `Cursor`: `.cursor/rules/ai-guardrails.md` and `.cursor/skills`
-- `OpenCode`: `AGENTS.md` and `.opencode/skills`
-- `Claude Code`: `CLAUDE.md` and `.claude/skills`
-- `AntiGravity`: `.agents/rules/ai-guardrails.md` and `.agents/skills`
-- `Other / Generic`: `AGENTS.md` and `.agents/skills`
-
-The `Other / Generic` option is the safest fallback for tools that follow the broader `AGENTS.md` / `.agents` ecosystem, but it is not guaranteed to work everywhere.
-
-**On Windows (PowerShell/CMD):**
-For pure Windows users (who do not use Git Bash or WSL), the `.sh` script will not run natively. In this case, we recommend using Git Bash or WSL to run the script. If you want to run it natively, an equivalent `.ps1` script needs to be created (coming soon).
-
-### To disable rules:
-If you want to remove the AI settings from the project:
-```bash
-~/Projects/ai-guardrails/scripts/remove.sh
+ai-guardrails/
+├── .agents/                  ← the template source of truth (what gets copied)
+│   ├── AGENTS.md             ← entry point
+│   ├── prompts/
+│   ├── rules/
+│   ├── skills/
+│   └── template/             ← templates for new SKILL/RULE/PROMPT
+├── optional/
+│   ├── packs/                ← stack-specific skills (optional)
+│   └── prompts/              ← harness + ralph-loop (optional)
+├── scripts/
+│   └── init.sh               ← interactive installer
+└── README.md
 ```
 
-`remove.sh` only removes symlinks created by this setup. It does not delete real project files such as a native `AGENTS.md` or `CLAUDE.md` that already belongs to the target repository.
+## How to use
 
-## Roadmap and Future
+From the root of your target project, run:
 
-- [ ] **Dynamic Injection by Stack:** Evolve the `apply.sh` script to ask not only for the IDE but also for the project's Stack (e.g., Spring Boot, .NET, NestJS, React). This way, the script will inject only the *skills* and rules relevant to that language, saving tokens and avoiding context conflicts in the AI.
+```bash
+~/Projects/ai-guardrails/scripts/init.sh
+```
 
-## Important Notice: Ecosystem Volatility (Mid-2026)
+The script is interactive, driven by the arrow keys:
 
-> **Note:** As of June 17, 2026, the AI coding assistant ecosystem (Trae, AntiGravity, OpenCode, Claude Code, etc.) is evolving rapidly. **There is still no universal standard** for naming system prompt files (e.g., `.cursorrules`, `AGENTS.md`, `GEMINI.md`) or skill directories. 
-> 
-> Because of this, the mapping created by the `apply.sh` script might become outdated if a specific IDE releases an update that changes its required folder structure or file name.
-> 
-> If you notice that an assistant is no longer reading the rules or loading the skills, please **open an Issue** in this repository so we can update the automation script with the new standard!
+1. **Setup mode** — select with ↑/↓ and Enter:
+   - *Minimal* — only the generic `.agents`.
+   - *Standard* — Minimal + harness prompt (uses the repository's own scripts
+     as the reproducible harness).
+   - *Full* — Standard + Ralph Loop prompt (Perceive → Orient → Decide → Act →
+     Record execution cycle per story).
+2. **Optional packs** — navigate with ↑/↓, toggle with **Space**, confirm with
+   **Enter**.
+3. **Versioning** — ↑/↓ and Enter: `.agents` **versioned in git** (shared with
+   the team) or **local-only** (hidden via `.git/info/exclude`, without
+   touching `.gitignore`).
+
+The result is a real `.agents/` folder inside your project. If you chose
+versioned, it is committed like any other file. If local-only, it stays on your
+machine and is never committed.
+
+### Next step: adapt the initial-setup
+
+The template is stack-agnostic by design. Open
+`.agents/prompts/initial-setup/PROMPT.md` after installation and fill in every
+`[brackets]` field — project name, objective, audience, domain rules, stack,
+open decisions and language conventions. Then paste it into a new AI
+conversation to bootstrap the project's workflow.
+
+### Removing
+
+```bash
+~/Projects/ai-guardrails/scripts/init.sh --remove
+```
+
+- A **local-only** `.agents` is deleted. This is safe: the template is fully
+  regenerable by running `init.sh` again.
+- A **versioned** `.agents` is left untouched (it belongs to the repository).
+  Remove it manually with `git rm -r .agents` if you no longer need it.
+- The `.git/info/exclude` entry is always cleaned.
+- The script **never touches `docs/` or any other project file** — it only
+  manipulates `.agents` and `.git/info/exclude`.
+
+### Switching between versioned and local-only
+
+```bash
+~/Projects/ai-guardrails/scripts/init.sh --set-versioning yes
+~/Projects/ai-guardrails/scripts/init.sh --set-versioning no
+```
+
+This updates the install metadata and the `.git/info/exclude` entry in place,
+without reinstalling or touching any content.
+
+## Ecosystem note (mid-2026)
+
+The AI coding assistant ecosystem is evolving rapidly and there is still no
+universal standard for system prompt file names (`AGENTS.md`, `CLAUDE.md`,
+`.cursorrules`, etc.). If a specific assistant stops reading the rules or
+loading skills, open an Issue so we can update the entry point mapping.
+
+## Roadmap
+
+- [ ] **Interactive stack selection:** evolve `init.sh` to detect the project's
+      stack and suggest the relevant packs automatically.
+- [ ] **PowerShell equivalent** of `init.sh` for pure Windows users.
