@@ -99,6 +99,7 @@ if [ "${1:-}" == "--remove" ]; then
     fi
 
     remove_git_exclude ".agents"
+    remove_git_exclude "/AGENTS.md"
     remove_git_exclude "AGENTS.md"
     echo "Entries removed from .git/info/exclude."
     exit 0
@@ -117,10 +118,13 @@ if [ "${1:-}" == "--set-versioning" ]; then
     fi
     if [ "$TARGET" == "no" ]; then
         add_git_exclude ".agents"
+        add_git_exclude "/AGENTS.md"
         sed -i 's/"versioned": *"[a-z]*"/"versioned": "no"/' "$MARKER"
         echo "Switched to local-only. .agents is now hidden from git (.git/info/exclude)."
     else
         remove_git_exclude ".agents"
+        remove_git_exclude "/AGENTS.md"
+        remove_git_exclude "AGENTS.md"
         sed -i 's/"versioned": *"[a-z]*"/"versioned": "yes"/' "$MARKER"
         echo "Switched to versioned. Run 'git add .agents' to track it."
     fi
@@ -362,6 +366,7 @@ if [ -d "$CURRENT_DIR/.git" ]; then
         2)
             add_git_exclude ".agents"
             add_git_exclude "AGENTS.md"
+            add_git_exclude "/AGENTS.md"
             echo ""
             echo "Note: .agents and the generated AGENTS.md are local-only. They were"
             echo "added to .git/info/exclude and will not be committed."
