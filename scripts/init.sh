@@ -54,7 +54,8 @@ Initialize this project with the ai-guardrails .agents template.
 
 The base .agents (rules + skills + initial-setup prompt) is always installed.
 Optionally you can add:
-  harness     — use the repo's own scripts as the reproducible harness
+  tooling     — use the repo's own scripts as the single source of truth
+                for commands, tests and checks
   ralph-loop  — Perceive→Orient→Decide→Act→Record cycle per story
                 (standard + ralph-loop == the previous "Full" mode)
 
@@ -262,21 +263,21 @@ echo "The base .agents (rules + skills + initial-setup) is always installed."
 echo "Choose which optional prompts to add (Space to toggle, Enter to confirm):"
 select_multi \
     "Optional prompts:" \
-    "harness — use the repo's own scripts as the reproducible harness" \
+    "tooling — use the repo's own scripts as the source of truth for commands" \
     "ralph-loop — Perceive → Orient → Decide → Act → Record per story"
 PROMPT_SEL=$MULTI_RESULT
 
-ENABLE_HARNESS=0
+ENABLE_TOOLING=0
 ENABLE_RALPH=0
 for sel in $PROMPT_SEL; do
     case "$sel" in
-        0) ENABLE_HARNESS=1 ;;
+        0) ENABLE_TOOLING=1 ;;
         1) ENABLE_RALPH=1 ;;
     esac
 done
-if [ "$ENABLE_HARNESS" == "1" ] && [ "$ENABLE_RALPH" == "1" ]; then
+if [ "$ENABLE_TOOLING" == "1" ] && [ "$ENABLE_RALPH" == "1" ]; then
     MODE=3
-elif [ "$ENABLE_HARNESS" == "1" ]; then
+elif [ "$ENABLE_TOOLING" == "1" ]; then
     MODE=2
 else
     MODE=1
@@ -324,10 +325,10 @@ cat > "$CURRENT_DIR/.agents/.ai-guardrails-install" <<EOF
 EOF
 echo "  install metadata written."
 
-if [ "$ENABLE_HARNESS" == "1" ]; then
-    mkdir -p "$CURRENT_DIR/.agents/prompts/harness"
-    cp "$GUARDRAILS_DIR/optional/prompts/harness/PROMPT.md" "$CURRENT_DIR/.agents/prompts/harness/PROMPT.md"
-    echo "  harness prompt installed."
+if [ "$ENABLE_TOOLING" == "1" ]; then
+    mkdir -p "$CURRENT_DIR/.agents/prompts/tooling"
+    cp "$GUARDRAILS_DIR/optional/prompts/tooling/PROMPT.md" "$CURRENT_DIR/.agents/prompts/tooling/PROMPT.md"
+    echo "  tooling prompt installed."
 fi
 
 if [ "$ENABLE_RALPH" == "1" ]; then

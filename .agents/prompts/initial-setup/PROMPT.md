@@ -38,7 +38,7 @@ called [PROJECT_NAME].
    - .agents/rules/ — non-negotiable constraints
    - .agents/skills/ — roles with their own procedures
    - .agents/prompts/ — reusable procedure prompts
-   - scripts/ — reproducible local commands (the harness)
+   - scripts/ — reproducible local commands (the tooling)
 
 3. Workflow rules:
    - The official kanban is the only source of the next demand.
@@ -59,7 +59,7 @@ called [PROJECT_NAME].
    - No silent refactors, no hallucinated libraries, no committed secrets.
 
 5. Optional prompts (read them IF the file exists in .agents/prompts/):
-   - .agents/prompts/harness/PROMPT.md — if present, ALWAYS run commands
+   - .agents/prompts/tooling/PROMPT.md — if present, ALWAYS run commands
      through the repository's own scripts (never invent commands) and document
      the real ones.
    - .agents/prompts/ralph-loop/PROMPT.md — if present, run the

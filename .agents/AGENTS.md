@@ -26,7 +26,7 @@ max_lines: 150
 | 3 | [`.agents/skills/README.md`](.agents/skills/README.md) | Index of skills / roles and their triggers |
 | 4 | [`.agents/prompts/README.md`](.agents/prompts/README.md) | Index of reusable prompts |
 
-> The harness prompt (`.agents/prompts/harness/PROMPT.md`) and the Ralph Loop
+> The tooling prompt (`.agents/prompts/tooling/PROMPT.md`) and the Ralph Loop
 > (`.agents/prompts/ralph-loop/PROMPT.md`) are **optional** and only exist if
 > this project was configured with them. Read them when present.
 

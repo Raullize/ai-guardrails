@@ -12,8 +12,15 @@ max_lines: 80
 | Prompt | Use |
 | --- | --- |
 | [initial-setup](./initial-setup/PROMPT.md) | Foundation prompt to bootstrap a project with the agentic workflow. **Always included.** |
-| [harness](./harness/PROMPT.md) | Optional. Instructs the agent to use the repository's own scripts as a reproducible harness. Included when the init script enables harness. |
+| [tooling](./tooling/PROMPT.md) | Optional. Instructs the agent to use the repository's own scripts as the single source of truth for commands, tests and checks. Included when the init script enables tooling. |
 | [ralph-loop](./ralph-loop/PROMPT.md) | Optional. Perceive → Orient → Decide → Act → Record execution cycle per story. Included when the init script enables the Ralph Loop. |
+
+> **Note on `harness`:** the term "agent harness" (the full wrapper around an LLM
+> — guardrails, MCP servers, tool definitions, permissions) is a **future
+> concept** for this template. It is not implemented yet because there is no MCP
+> or external-tool configuration to describe. When that support lands, the
+> harness concept will be introduced here as the umbrella document; until then,
+> `tooling` covers the only concrete part that exists.
 
 ## Source of truth
 

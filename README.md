@@ -33,7 +33,7 @@ ai-guardrails/
 │   └── template/             ← templates for new SKILL/RULE/PROMPT
 ├── optional/
 │   ├── packs/                ← stack-specific skills (optional)
-│   └── prompts/              ← harness + ralph-loop (optional)
+│   └── prompts/              ← tooling + ralph-loop (optional)
 ├── scripts/
 │   └── init.sh               ← interactive installer
 └── README.md
@@ -49,12 +49,12 @@ From the root of your target project, run:
 
 The script is interactive, driven by the arrow keys:
 
-1. **Setup mode** — select with ↑/↓ and Enter:
-   - *Minimal* — only the generic `.agents`.
-   - *Standard* — Minimal + harness prompt (uses the repository's own scripts
-     as the reproducible harness).
-   - *Full* — Standard + Ralph Loop prompt (Perceive → Orient → Decide → Act →
-     Record execution cycle per story).
+1. **Optional prompts** — choose what the base `.agents` should include, beyond
+   the always-installed rules, skills and initial-setup:
+   - *tooling* — the repository's own scripts as the single source of truth
+     for commands, tests and checks (never invent a command).
+   - *ralph-loop* — the Perceive → Orient → Decide → Act → Record execution
+     cycle per story.
 2. **Optional packs** — navigate with ↑/↓, toggle with **Space**, confirm with
    **Enter**.
 3. **Versioning** — ↑/↓ and Enter: `.agents` **versioned in git** (shared with
@@ -109,3 +109,8 @@ loading skills, open an Issue so we can update the entry point mapping.
 - [ ] **Interactive stack selection:** evolve `init.sh` to detect the project's
       stack and suggest the relevant packs automatically.
 - [ ] **PowerShell equivalent** of `init.sh` for pure Windows users.
+- [ ] **Agent harness:** introduce the "harness" concept as the umbrella
+      document for the full agent wrapper (guardrails + skills + MCP servers +
+      tool definitions + permissions), once the template supports MCP or
+      external-tool configuration. Until then, `tooling` covers the only
+      concrete piece that exists.
