@@ -12,8 +12,8 @@ placeholders.
 - `.agents/rules/` — non-negotiable constraints, stack-independent (test-first,
   evidence quality, no silent refactors, no hallucination, secrets, semantic
   commits).
-- `.agents/skills/` — generic roles (council, docs, security audit, performance
-  audit).
+- `.agents/skills/` — generic roles (council, grill-me, docs, security audit,
+  performance audit).
 - `.agents/prompts/` — reusable procedure prompts, including
   `initial-setup/PROMPT.md` with `[brackets]` placeholders to adapt the
   project's niche and stack.
