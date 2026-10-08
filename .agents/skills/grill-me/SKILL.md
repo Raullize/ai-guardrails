@@ -1,6 +1,6 @@
 ---
 name: grill-me
-description: Adversarial interrogation. When a plan, idea or decision must be stress-tested before committing, grill the user with hard questions that expose unstated assumptions. Triggers: "/grill", "grill me", "me grelha".
+description: 'Adversarial interrogation. When a plan, idea or decision must be stress-tested before committing, grill the user with hard questions that expose unstated assumptions. Triggers: "/grill", "grill me", "me grelha".'
 ---
 
 # Grill-Me — put the plan in the hot seat
