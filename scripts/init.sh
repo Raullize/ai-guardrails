@@ -52,8 +52,9 @@ Usage: init.sh [OPTION]
 
 Initialize this project with the ai-guardrails .agents template.
 
-The base .agents (rules + skills + initial-setup prompt) is always installed.
-Optionally you can add:
+The base .agents (rules + skills) is always installed.
+You can include prompts (initial-setup) or install rules and skills only.
+If prompts are included, you can also add:
   tooling     — use the repo's own scripts as the single source of truth
                 for commands, tests and checks
   ralph-loop  — Perceive→Orient→Decide→Act→Record cycle per story
@@ -76,15 +77,18 @@ fi
 
 if [ "${1:-}" == "--remove" ]; then
     MARKER="$CURRENT_DIR/.agents/.ai-guardrails-install"
-    VERSIONED="unknown"
-    if [ -f "$MARKER" ]; then
-        VERSIONED="$(grep -o '"versioned": *"[a-z]*"' "$MARKER" 2>/dev/null | sed 's/.*: *"\([a-z]*\)"/\1/')"
+
+    IS_TRACKED=0
+    if [ -d "$CURRENT_DIR/.git" ] && [ -d "$CURRENT_DIR/.agents" ]; then
+        if [ -n "$(git -C "$CURRENT_DIR" ls-files -- .agents 2>/dev/null)" ]; then
+            IS_TRACKED=1
+        fi
     fi
 
     if [ -L "$CURRENT_DIR/.agents" ]; then
         rm -f "$CURRENT_DIR/.agents"
         echo "Symlink .agents removed."
-    elif [ -d "$CURRENT_DIR/.agents" ] && [ "$VERSIONED" == "no" ]; then
+    elif [ -d "$CURRENT_DIR/.agents" ] && [ "$IS_TRACKED" == "0" ] && [ -f "$MARKER" ]; then
         rm -rf "$CURRENT_DIR/.agents"
         if [ -f "$CURRENT_DIR/AGENTS.md" ] && grep -q "generated-by: ai-guardrails" "$CURRENT_DIR/AGENTS.md" 2>/dev/null; then
             rm -f "$CURRENT_DIR/AGENTS.md"
@@ -92,9 +96,14 @@ if [ "${1:-}" == "--remove" ]; then
         fi
         echo "Local-only .agents removed."
     elif [ -d "$CURRENT_DIR/.agents" ]; then
-        echo -e "\033[1;31m$CURRENT_DIR/.agents is a real versioned directory.\033[0m"
-        echo "It is tracked in git. Remove it manually (git rm -r .agents) if you no longer need it."
-        echo "The generated AGENTS.md is also versioned; remove it with git rm AGENTS.md if desired."
+        if [ "$IS_TRACKED" == "1" ]; then
+            echo -e "\033[1;31m$CURRENT_DIR/.agents is a real versioned directory.\033[0m"
+            echo "It is tracked in git. Remove it manually (git rm -r .agents) if you no longer need it."
+            echo "The generated AGENTS.md is also versioned; remove it with git rm AGENTS.md if desired."
+        else
+            echo -e "\033[1;31m$CURRENT_DIR/.agents was not installed by ai-guardrails.\033[0m"
+            echo "Remove it manually if you no longer need it."
+        fi
     else
         echo "No .agents installation found."
     fi
@@ -259,28 +268,38 @@ echo "Project: $CURRENT_DIR"
 echo ""
 
 echo ""
-echo "The base .agents (rules + skills + initial-setup) is always installed."
-echo "Choose which optional prompts to add (Space to toggle, Enter to confirm):"
-select_multi \
-    "Optional prompts:" \
-    "tooling — use the repo's own scripts as the source of truth for commands" \
-    "ralph-loop — Perceive → Orient → Decide → Act → Record per story"
-PROMPT_SEL=$MULTI_RESULT
+select_option \
+    "Include prompts? (↑/↓ + Enter)" \
+    "Yes — initial-setup + optional prompts" \
+    "No — rules and skills only"
+INCLUDE_PROMPTS=$?
 
 ENABLE_TOOLING=0
 ENABLE_RALPH=0
-for sel in $PROMPT_SEL; do
-    case "$sel" in
-        0) ENABLE_TOOLING=1 ;;
-        1) ENABLE_RALPH=1 ;;
-    esac
-done
-if [ "$ENABLE_TOOLING" == "1" ] && [ "$ENABLE_RALPH" == "1" ]; then
-    MODE=3
-elif [ "$ENABLE_TOOLING" == "1" ]; then
-    MODE=2
+if [ "$INCLUDE_PROMPTS" == "0" ]; then
+    echo ""
+    echo "Choose which optional prompts to add (Space to toggle, Enter to confirm):"
+    select_multi \
+        "Optional prompts:" \
+        "tooling — use the repo's own scripts as the source of truth for commands" \
+        "ralph-loop — Perceive → Orient → Decide → Act → Record per story"
+    PROMPT_SEL=$MULTI_RESULT
+
+    for sel in $PROMPT_SEL; do
+        case "$sel" in
+            0) ENABLE_TOOLING=1 ;;
+            1) ENABLE_RALPH=1 ;;
+        esac
+    done
+    if [ "$ENABLE_TOOLING" == "1" ] && [ "$ENABLE_RALPH" == "1" ]; then
+        MODE=3
+    elif [ "$ENABLE_TOOLING" == "1" ]; then
+        MODE=2
+    else
+        MODE=1
+    fi
 else
-    MODE=1
+    MODE=0
 fi
 
 echo ""
@@ -307,6 +326,11 @@ echo "Installing .agents template..."
 cp -R "$GUARDRAILS_DIR/.agents" "$CURRENT_DIR/.agents"
 echo "  .agents base copied."
 
+if [ "$INCLUDE_PROMPTS" != "0" ]; then
+    rm -rf "$CURRENT_DIR/.agents/prompts"
+    echo "  prompts skipped (rules and skills only)."
+fi
+
 if [ -e "$CURRENT_DIR/AGENTS.md" ]; then
     echo "  WARN: AGENTS.md already exists at the project root. Not overwriting."
     echo "        The entry point lives at .agents/AGENTS.md."
@@ -319,6 +343,7 @@ cat > "$CURRENT_DIR/.agents/.ai-guardrails-install" <<EOF
 {
   "tool": "ai-guardrails",
   "versioned": "$([ "$VERSIONING" == "2" ] && echo no || echo yes)",
+  "prompts": "$([ "$INCLUDE_PROMPTS" == "0" ] && echo yes || echo no)",
   "mode": "$MODE",
   "packs": "$PACKS"
 }
@@ -387,7 +412,13 @@ echo "Done! Project configured."
 echo "  - Entry point: .agents/AGENTS.md"
 echo "  - Rules:       .agents/rules/"
 echo "  - Skills:      .agents/skills/"
-echo "  - Prompts:     .agents/prompts/"
+if [ "$INCLUDE_PROMPTS" == "0" ]; then
+    echo "  - Prompts:     .agents/prompts/"
+fi
 echo ""
-echo "Next: open .agents/prompts/initial-setup/PROMPT.md, fill in the [brackets],"
-echo "and paste it into a new AI conversation to bootstrap the project workflow."
+if [ "$INCLUDE_PROMPTS" == "0" ]; then
+    echo "Next: open .agents/prompts/initial-setup/PROMPT.md, fill in the [brackets],"
+    echo "and paste it into a new AI conversation to bootstrap the project workflow."
+else
+    echo "Next: open .agents/AGENTS.md and start with your first task."
+fi

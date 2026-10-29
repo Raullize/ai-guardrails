@@ -49,15 +49,17 @@ From the root of your target project, run:
 
 The script is interactive, driven by the arrow keys:
 
-1. **Optional prompts** — choose what the base `.agents` should include, beyond
-   the always-installed rules, skills and initial-setup:
+1. **Prompts** — choose whether `.agents` includes prompts (`initial-setup`) or
+   ships **rules and skills only**.
+2. **Optional prompts** — when prompts are included, choose what the base
+   `.agents` should add beyond the always-installed `initial-setup`:
    - *tooling* — the repository's own scripts as the single source of truth
      for commands, tests and checks (never invent a command).
    - *ralph-loop* — the Perceive → Orient → Decide → Act → Record execution
      cycle per story.
-2. **Optional packs** — navigate with ↑/↓, toggle with **Space**, confirm with
+3. **Optional packs** — navigate with ↑/↓, toggle with **Space**, confirm with
    **Enter**.
-3. **Versioning** — ↑/↓ and Enter: `.agents` **versioned in git** (shared with
+4. **Versioning** — ↑/↓ and Enter: `.agents` **versioned in git** (shared with
    the team) or **local-only** (hidden via `.git/info/exclude`, without
    touching `.gitignore`).
 
