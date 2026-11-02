@@ -89,6 +89,7 @@ build_config_table() {
                 3) pack_items+=('`refactor-react`') ;;
                 4) pack_items+=('`seo-optimizer`') ;;
                 5) pack_items+=('`ui-to-code`') ;;
+                6) pack_items+=('`unslop`') ;;
             esac
         done
     fi
@@ -482,7 +483,7 @@ echo ""
 select_multi \
     "Optional stack-specific packs (Space to toggle, Enter to confirm):" \
     "docker-expert" "humanize-frontend" "modernize-legacy" \
-    "refactor-react" "seo-optimizer" "ui-to-code"
+    "refactor-react" "seo-optimizer" "ui-to-code" "unslop"
 PACKS=$(echo $MULTI_RESULT | sed 's/ /,/g')
 if [ -z "$PACKS" ]; then
     PACKS="7"
@@ -583,6 +584,7 @@ if [ -n "$PACKS" ] && [ "$PACKS" != "7" ]; then
             3) install_pack "refactor-react" ;;
             4) install_pack "seo-optimizer" ;;
             5) install_pack "ui-to-code" ;;
+            6) install_pack "unslop" ;;
             *) echo "  WARN: invalid pack selection '$sel' ignored." ;;
         esac
     done

@@ -23,15 +23,15 @@ the `.agents/` folder with the reusable artifacts.
   `initial-setup/PROMPT.md` with `[brackets]` placeholders to adapt the
   project's niche and stack.
 - `optional/packs/` — stack-specific skills (Docker, React, frontend
-  humanization, SEO, UI-to-code, legacy modernization) installed only when
-  relevant.
+  humanization, SEO, UI-to-code, unslop, legacy modernization) installed only
+  when relevant.
 
 ## Repository structure
 
 ```
 ai-guardrails/
-├── .agents/                  ← the template source of truth (what gets copied)
-│   ├── AGENTS.md             ← entry point
+├── AGENTS.md                 ← single entry point, installed at the project root
+├── .agents/                  ← template source of truth (rules, skills, prompts)
 │   ├── prompts/
 │   ├── rules/
 │   ├── skills/

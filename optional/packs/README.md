@@ -22,19 +22,27 @@ target project.
 | [refactor-react](./refactor-react/SKILL.md) | React / Next.js | Refactoring React/Next components |
 | [seo-optimizer](./seo-optimizer/SKILL.md) | Frontend / SEO | SEO and accessibility optimization |
 | [ui-to-code](./ui-to-code/SKILL.md) | Frontend / Tailwind | Converting mockups into frontend code |
+| [unslop](./unslop/SKILL.md) | Frontend / UI | Removing AI-looking ("vibecoded") visual slop from screens |
 
 ## Mandatory structure of a pack
 
 ```
 optional/packs/<pack-name-kebab-case>/
-└── SKILL.md                  ← main file, ALWAYS with this name
+├── SKILL.md                  ← main file, ALWAYS with this name
+├── references/               ← optional: docs and images the skill cites
+├── scripts/                  ← optional: helper scripts the skill runs
+└── assets/                   ← optional: snippets, checklists, templates
 ```
 
 Same skill requirements as the core: frontmatter with `name` and `description`,
-single responsibility, verifiable criteria, explicit boundary.
+single responsibility, verifiable criteria, explicit boundary. Keep the
+upstream folder layout when the skill ships its own `references/` or `scripts/`
+(for example, `unslop`), because the `SKILL.md` links to those paths.
 
 ## How to add a new pack
 
-1. Create `optional/packs/<name>/SKILL.md` with the required frontmatter.
+1. Create `optional/packs/<name>/SKILL.md` with the required frontmatter,
+   plus any `references/`, `scripts/` or `assets/` the skill needs.
 2. Add it to the index table above.
-3. No change needed in `init.sh` unless the pack requires extra files.
+3. Add it to the pack menu and to the index→name mappings in `scripts/init.sh`
+   (`select_multi` options, `install_pack` case, and `build_config_table`).
