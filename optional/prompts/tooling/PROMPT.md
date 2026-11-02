@@ -24,6 +24,9 @@ lint and build the repository. Do not invent commands.
    snippets and, when applicable, Docker compose setup.
 4. If a command does not exist, do not fabricate it. Report the gap and propose
    adding it to the tooling.
+5. When the project runs on Windows, document the real Windows form of each
+   command (PowerShell or Git Bash) alongside the Unix form when they differ,
+   instead of showing only the Unix path.
 
 ## Output
 

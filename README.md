@@ -55,6 +55,36 @@ From the root of your target project, run:
 ~/Projects/ai-guardrails/scripts/init.sh
 ```
 
+### Windows (Git Bash or PowerShell)
+
+`init.sh` is a Bash script. On Windows, run it through Git Bash from the root
+of the target project:
+
+**Git Bash**
+
+```bash
+cd "C:/Users/<you>/Documents/Projects/<project>"
+bash "C:/Users/<you>/Documents/Projects/ai-guardrails/scripts/init.sh"
+```
+
+**PowerShell**
+
+```powershell
+cd "C:\Users\<you>\Documents\Projects\<project>"
+& "C:\Program Files\Git\bin\bash.exe" "C:\Users\<you>\Documents\Projects\ai-guardrails\scripts\init.sh"
+```
+
+The other modes use the same pattern:
+
+```bash
+bash "C:/Users/<you>/Documents/Projects/ai-guardrails/scripts/init.sh" --remove
+bash "C:/Users/<you>/Documents/Projects/ai-guardrails/scripts/init.sh" --set-versioning no
+```
+
+> Run the script from the target project root, never inside the
+> `ai-guardrails` repository itself. The remaining examples in this README use
+> the Unix path; on Windows use the `bash "C:/..."` form shown above.
+
 The script is interactive, driven by the arrow keys:
 
 1. **Prompts** — choose whether `.agents` includes prompts (`initial-setup`) or
