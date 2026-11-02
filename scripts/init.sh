@@ -14,6 +14,11 @@ if [ ! -d "$GUARDRAILS_DIR/.agents" ]; then
     exit 1
 fi
 
+if [ ! -f "$GUARDRAILS_DIR/AGENTS.md" ]; then
+    echo -e "\033[1;31mError: AGENTS.md entry point not found in $GUARDRAILS_DIR\033[0m"
+    exit 1
+fi
+
 add_git_exclude() {
     local item="$1"
     if [ -d ".git" ]; then
@@ -30,27 +35,179 @@ remove_git_exclude() {
     fi
 }
 
-ROOT_AGENTS_TEMPLATE='---
-name: agents-root-entrypoint
-description: Entry point for LLM assistants. Points to the source of truth in .agents/. Does not duplicate content.
-document_type: agents_manifest
-max_lines: 60
----
+# Removes only what ai-guardrails created in the root AGENTS.md:
+# - the whole file when it is the generated entry point;
+# - the managed section when it was appended to a pre-existing file.
+clean_root_agents() {
+    local file="$CURRENT_DIR/AGENTS.md"
+    [ -f "$file" ] || return 0
 
-# AGENTS.md — Entry Point for LLM Assistants
+    if grep -qF "generated-by: ai-guardrails" "$file" 2>/dev/null; then
+        rm -f "$file"
+        echo "Root AGENTS.md (generated entry point) removed."
+    elif grep -qF "ai-guardrails:begin" "$file" 2>/dev/null; then
+        awk '
+            /<!-- ai-guardrails:begin -->/ { skip=1; next }
+            /<!-- ai-guardrails:end -->/   { skip=0; next }
+            !skip { print }
+        ' "$file" > "$file.tmp" && mv "$file.tmp" "$file"
+        echo "ai-guardrails section removed from root AGENTS.md (file kept)."
+    fi
+}
 
-> **The source of truth lives in `.agents/*`, versioned in git.**
-> Read [`.agents/AGENTS.md`](.agents/AGENTS.md) for the full instructions,
-> rules and skills. This file only points; it does not duplicate content.
+join_list() {
+    local out="" item
+    for item in "$@"; do
+        if [ -z "$out" ]; then
+            out="$item"
+        else
+            out="$out, $item"
+        fi
+    done
+    printf '%s' "$out"
+}
 
-<!-- generated-by: ai-guardrails -->
-'
+# Prints the Markdown table that reflects the choices made in this run.
+build_config_table() {
+    local prompts_val="none"
+    [ "$INCLUDE_PROMPTS" == "0" ] && prompts_val='`initial-setup`'
+
+    local -a optional_items=()
+    [ "$ENABLE_TOOLING" == "1" ] && optional_items+=('`tooling`')
+    [ "$ENABLE_RALPH" == "1" ] && optional_items+=('`ralph-loop`')
+
+    local -a pack_items=()
+    if [ -n "$PACKS" ] && [ "$PACKS" != "7" ]; then
+        local sel
+        local -a selected=()
+        IFS=',' read -ra selected <<< "$PACKS"
+        for sel in "${selected[@]}"; do
+            case "$(echo "$sel" | tr -d ' ')" in
+                0) pack_items+=('`docker-expert`') ;;
+                1) pack_items+=('`humanize-frontend`') ;;
+                2) pack_items+=('`modernize-legacy`') ;;
+                3) pack_items+=('`refactor-react`') ;;
+                4) pack_items+=('`seo-optimizer`') ;;
+                5) pack_items+=('`ui-to-code`') ;;
+            esac
+        done
+    fi
+
+    local optional_val packs_val git_val
+    optional_val=$(join_list "${optional_items[@]}")
+    packs_val=$(join_list "${pack_items[@]}")
+    [ -z "$optional_val" ] && optional_val="none"
+    [ -z "$packs_val" ] && packs_val="none"
+    git_val="versioned"
+    [ "$VERSIONING" == "2" ] && git_val="local-only (not committed)"
+
+    printf '%s\n' '| Option | Value |'
+    printf '%s\n' '|---|---|'
+    printf '| Prompts | %s |\n' "$prompts_val"
+    printf '| Optional prompts | %s |\n' "$optional_val"
+    printf '| Stack packs | %s |\n' "$packs_val"
+    printf '| Git | %s |\n' "$git_val"
+}
+
+# Keeps only the content that matches the chosen configuration.
+# Supports line-level <!-- @if TAG --> annotations and block-level
+# <!-- ai-guardrails:if TAG --> ... <!-- ai-guardrails:endif --> sections.
+filter_agents_tags() {
+    local src="$1" out="$2"
+    local -a enabled=()
+    [ "$INCLUDE_PROMPTS" == "0" ] && enabled+=("prompts")
+    [ "$INCLUDE_PROMPTS" != "0" ] && enabled+=("no-prompts")
+    [ "$ENABLE_TOOLING" == "1" ] && enabled+=("tooling")
+    [ "$ENABLE_RALPH" == "1" ] && enabled+=("ralph")
+    if [ "$ENABLE_TOOLING" == "1" ] || [ "$ENABLE_RALPH" == "1" ]; then
+        enabled+=("any-optional")
+    fi
+
+    local enabled_list
+    enabled_list=$(IFS=','; printf '%s' "${enabled[*]}")
+
+    awk -v enabled_list="$enabled_list" '
+        BEGIN {
+            n = split(enabled_list, a, ",")
+            for (i = 1; i <= n; i++) enabled[a[i]] = 1
+            depth = 0
+        }
+        {
+            if ($0 ~ /<!-- ai-guardrails:if [a-z0-9-]+ -->/) {
+                tag = $0
+                sub(/^.*<!-- ai-guardrails:if /, "", tag)
+                sub(/ -->.*$/, "", tag)
+                depth++
+                cond[depth] = enabled[tag]
+                next
+            }
+            if ($0 ~ /<!-- ai-guardrails:endif -->/) {
+                if (depth > 0) depth--
+                next
+            }
+
+            keep = 1
+            for (i = 1; i <= depth; i++) if (!cond[i]) keep = 0
+            if (!keep) next
+
+            if (match($0, /<!-- @if [a-z0-9-]+ -->[[:space:]]*$/)) {
+                tag = substr($0, RSTART, RLENGTH)
+                sub(/^<!-- @if /, "", tag)
+                sub(/ -->.*$/, "", tag)
+                if (!enabled[tag]) next
+                sub(/[[:space:]]*<!-- @if [a-z0-9-]+ -->[[:space:]]*$/, "")
+            }
+            print
+        }
+    ' "$src" > "$out"
+}
+
+# Updates only the Git row of the config table after a versioning switch.
+update_agents_git_row() {
+    local value="$1"
+    local file="$CURRENT_DIR/AGENTS.md"
+    [ -f "$file" ] || return 0
+    grep -qF "ai-guardrails:config:begin" "$file" 2>/dev/null || return 0
+    awk -v value="$value" '
+        /<!-- ai-guardrails:config:begin -->/ { in_cfg=1; print; next }
+        /<!-- ai-guardrails:config:end -->/   { in_cfg=0; print; next }
+        in_cfg && /^\| Git \|/ { print "| Git | " value " |"; next }
+        { print }
+    ' "$file" > "$file.tmp" && mv "$file.tmp" "$file"
+}
+
+# Renders the entry point: filters optional blocks and injects the config table
+# between the ai-guardrails:config markers.
+render_agents() {
+    local target="$1"
+    local src="$GUARDRAILS_DIR/AGENTS.md"
+    local tmp="$target.tmp"
+    local cfg="$target.cfg"
+
+    filter_agents_tags "$src" "$tmp"
+    build_config_table > "$cfg"
+
+    awk -v block="$cfg" '
+        /<!-- ai-guardrails:config:begin -->/ {
+            print
+            while ((getline line < block) > 0) print line
+            close(block)
+            in_block=1
+            next
+        }
+        /<!-- ai-guardrails:config:end -->/ { in_block=0; print; next }
+        !in_block { print }
+    ' "$tmp" > "$target"
+
+    rm -f "$tmp" "$cfg"
+}
 
 usage() {
     cat <<'EOF'
 Usage: init.sh [OPTION]
 
-Initialize this project with the ai-guardrails .agents template.
+Initialize this project with the ai-guardrails .agents template and a single
+AGENTS.md entry point at the project root.
 
 The base .agents (rules + skills) is always installed.
 You can include prompts (initial-setup) or install rules and skills only.
@@ -63,8 +220,10 @@ If prompts are included, you can also add:
 Options:
   --remove               Remove a local-only .agents installation (real files are
                          deleted; the template is regenerable via init.sh) and
-                         clean its .git/info/exclude entry. A versioned .agents
-                         is left untouched.
+                         clean its .git/info/exclude entry. A generated root
+                         AGENTS.md is also removed; a pre-existing one only loses
+                         its ai-guardrails section. A versioned .agents is left
+                         untouched.
   --set-versioning yes|no  Switch between versioned and local-only after install.
   --help                 Show this help
 EOF
@@ -87,25 +246,24 @@ if [ "${1:-}" == "--remove" ]; then
 
     if [ -L "$CURRENT_DIR/.agents" ]; then
         rm -f "$CURRENT_DIR/.agents"
+        clean_root_agents
         echo "Symlink .agents removed."
     elif [ -d "$CURRENT_DIR/.agents" ] && [ "$IS_TRACKED" == "0" ] && [ -f "$MARKER" ]; then
         rm -rf "$CURRENT_DIR/.agents"
-        if [ -f "$CURRENT_DIR/AGENTS.md" ] && grep -q "generated-by: ai-guardrails" "$CURRENT_DIR/AGENTS.md" 2>/dev/null; then
-            rm -f "$CURRENT_DIR/AGENTS.md"
-            echo "Root AGENTS.md (generated entry point) removed."
-        fi
+        clean_root_agents
         echo "Local-only .agents removed."
     elif [ -d "$CURRENT_DIR/.agents" ]; then
         if [ "$IS_TRACKED" == "1" ]; then
             echo -e "\033[1;31m$CURRENT_DIR/.agents is a real versioned directory.\033[0m"
             echo "It is tracked in git. Remove it manually (git rm -r .agents) if you no longer need it."
-            echo "The generated AGENTS.md is also versioned; remove it with git rm AGENTS.md if desired."
+            echo "The root AGENTS.md is also versioned; remove it with git rm AGENTS.md if it was generated."
         else
             echo -e "\033[1;31m$CURRENT_DIR/.agents was not installed by ai-guardrails.\033[0m"
             echo "Remove it manually if you no longer need it."
         fi
     else
         echo "No .agents installation found."
+        clean_root_agents
     fi
 
     remove_git_exclude ".agents"
@@ -126,17 +284,35 @@ if [ "${1:-}" == "--set-versioning" ]; then
         echo -e "\033[1;31mNo .agents installation found here.\033[0m"
         exit 1
     fi
+    ROOT_MODE=$(sed -n 's/.*"root_agents": *"\([^"]*\)".*/\1/p' "$MARKER" 2>/dev/null)
+    if [ -z "$ROOT_MODE" ]; then
+        if [ -f "$CURRENT_DIR/AGENTS.md" ] && grep -qF "generated-by: ai-guardrails" "$CURRENT_DIR/AGENTS.md" 2>/dev/null; then
+            ROOT_MODE="generated"
+        else
+            ROOT_MODE="appended"
+        fi
+    fi
+
     if [ "$TARGET" == "no" ]; then
         add_git_exclude ".agents"
-        add_git_exclude "/AGENTS.md"
+        if [ "$ROOT_MODE" == "generated" ]; then
+            add_git_exclude "AGENTS.md"
+            add_git_exclude "/AGENTS.md"
+            echo "Switched to local-only. .agents and AGENTS.md are now hidden from git (.git/info/exclude)."
+        else
+            remove_git_exclude "AGENTS.md"
+            remove_git_exclude "/AGENTS.md"
+            echo "Switched to local-only. .agents is hidden from git; your AGENTS.md is kept tracked."
+        fi
         sed -i 's/"versioned": *"[a-z]*"/"versioned": "no"/' "$MARKER"
-        echo "Switched to local-only. .agents is now hidden from git (.git/info/exclude)."
+        update_agents_git_row "local-only (not committed)"
     else
         remove_git_exclude ".agents"
         remove_git_exclude "/AGENTS.md"
         remove_git_exclude "AGENTS.md"
         sed -i 's/"versioned": *"[a-z]*"/"versioned": "yes"/' "$MARKER"
-        echo "Switched to versioned. Run 'git add .agents' to track it."
+        update_agents_git_row "versioned"
+        echo "Switched to versioned. Run 'git add .agents AGENTS.md' to track them."
     fi
     exit 0
 fi
@@ -331,12 +507,36 @@ if [ "$INCLUDE_PROMPTS" != "0" ]; then
     echo "  prompts skipped (rules and skills only)."
 fi
 
-if [ -e "$CURRENT_DIR/AGENTS.md" ]; then
-    echo "  WARN: AGENTS.md already exists at the project root. Not overwriting."
-    echo "        The entry point lives at .agents/AGENTS.md."
-else
-    printf '%s' "$ROOT_AGENTS_TEMPLATE" > "$CURRENT_DIR/AGENTS.md"
+ROOT_AGENTS_MODE="none"
+if [ ! -e "$CURRENT_DIR/AGENTS.md" ]; then
+    render_agents "$CURRENT_DIR/AGENTS.md"
+    ROOT_AGENTS_MODE="generated"
     echo "  Root AGENTS.md entry point created."
+elif grep -qF "generated-by: ai-guardrails" "$CURRENT_DIR/AGENTS.md" 2>/dev/null; then
+    ROOT_AGENTS_MODE="generated"
+    echo "  Root AGENTS.md already contains the ai-guardrails entry point; left untouched."
+elif grep -qF "ai-guardrails:begin" "$CURRENT_DIR/AGENTS.md" 2>/dev/null; then
+    ROOT_AGENTS_MODE="appended"
+    echo "  Root AGENTS.md already contains the ai-guardrails section; left untouched."
+else
+    ROOT_AGENTS_MODE="appended"
+    {
+        printf '\n%s\n' '<!-- ai-guardrails:begin -->'
+        printf '\n%s\n' '## AI guardrails'
+        printf '\n%s\n' 'This repository uses the ai-guardrails template. Rules, skills and prompts live in `.agents/`.'
+        printf '\n%s\n' '- Rules index: [`.agents/rules/README.md`](.agents/rules/README.md)'
+        printf '%s\n' '- Skills index: [`.agents/skills/README.md`](.agents/skills/README.md)'
+        if [ "$INCLUDE_PROMPTS" == "0" ]; then
+            printf '%s\n' '- Prompts index: [`.agents/prompts/README.md`](.agents/prompts/README.md)'
+        fi
+        printf '\n%s\n' 'Installed configuration:'
+        printf '\n%s\n' '<!-- ai-guardrails:config:begin -->'
+        build_config_table
+        printf '%s\n' '<!-- ai-guardrails:config:end -->'
+        printf '\n%s\n' 'Apply the rules and skills from `.agents/` to every step.'
+        printf '%s\n' '<!-- ai-guardrails:end -->'
+    } >> "$CURRENT_DIR/AGENTS.md"
+    echo "  Existing AGENTS.md preserved; ai-guardrails section appended."
 fi
 
 cat > "$CURRENT_DIR/.agents/.ai-guardrails-install" <<EOF
@@ -345,7 +545,8 @@ cat > "$CURRENT_DIR/.agents/.ai-guardrails-install" <<EOF
   "versioned": "$([ "$VERSIONING" == "2" ] && echo no || echo yes)",
   "prompts": "$([ "$INCLUDE_PROMPTS" == "0" ] && echo yes || echo no)",
   "mode": "$MODE",
-  "packs": "$PACKS"
+  "packs": "$PACKS",
+  "root_agents": "$ROOT_AGENTS_MODE"
 }
 EOF
 echo "  install metadata written."
@@ -391,11 +592,16 @@ if [ -d "$CURRENT_DIR/.git" ]; then
     case "$VERSIONING" in
         2)
             add_git_exclude ".agents"
-            add_git_exclude "AGENTS.md"
-            add_git_exclude "/AGENTS.md"
             echo ""
-            echo "Note: .agents and the generated AGENTS.md are local-only. They were"
-            echo "added to .git/info/exclude and will not be committed."
+            if [ "$ROOT_AGENTS_MODE" == "generated" ]; then
+                add_git_exclude "AGENTS.md"
+                add_git_exclude "/AGENTS.md"
+                echo "Note: .agents and the generated AGENTS.md are local-only. They were"
+                echo "added to .git/info/exclude and will not be committed."
+            else
+                echo "Note: .agents is local-only and was added to .git/info/exclude."
+                echo "Your existing AGENTS.md was kept and is NOT hidden from git."
+            fi
             ;;
         *)
             echo ""
@@ -409,7 +615,7 @@ fi
 
 echo ""
 echo "Done! Project configured."
-echo "  - Entry point: .agents/AGENTS.md"
+echo "  - Entry point: AGENTS.md (project root)"
 echo "  - Rules:       .agents/rules/"
 echo "  - Skills:      .agents/skills/"
 if [ "$INCLUDE_PROMPTS" == "0" ]; then
@@ -420,5 +626,5 @@ if [ "$INCLUDE_PROMPTS" == "0" ]; then
     echo "Next: open .agents/prompts/initial-setup/PROMPT.md, fill in the [brackets],"
     echo "and paste it into a new AI conversation to bootstrap the project workflow."
 else
-    echo "Next: open .agents/AGENTS.md and start with your first task."
+    echo "Next: open AGENTS.md and start with your first task."
 fi

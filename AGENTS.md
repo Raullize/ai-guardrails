@@ -1,6 +1,6 @@
 ---
 name: agents-root-entrypoint
-description: Entry point for LLM assistants into the project. Points to the source of truth, non-negotiable rules and the next demand. This file does NOT duplicate content.
+description: Entry point for LLM assistants into the project. Points to the source of truth, non-negotiable rules and the installed configuration. This file does NOT duplicate content.
 document_type: agents_manifest
 applies_when:
   - an agent opens the repository for the first time
@@ -10,25 +10,36 @@ max_lines: 150
 
 # AGENTS.md — Entry Point for LLM Assistants
 
-> **The source of truth LIVES in `.agents/*`, versioned in git.**
+> **The source of truth LIVES in `.agents/*`.**
 > Here there are ONLY pointers in the right order and the executive summary of
 > what MUST NOT be broken. Any conflict between this file and `.agents/` is
 > resolved by `.agents/`.
+
+## Installed configuration
+
+<!-- ai-guardrails:config:begin -->
+| Option | Value |
+|---|---|
+| Prompts | `initial-setup` |
+| Optional prompts | `none` |
+| Stack packs | `none` |
+| Git | versioned |
+<!-- ai-guardrails:config:end -->
 
 ---
 
 ## 1. Mandatory reading — before any action
 
-| # | File | What you learn there |
-|---|---|---|
-| 1 | [`.agents/prompts/initial-setup/PROMPT.md`](.agents/prompts/initial-setup/PROMPT.md) | Project bootstrap, workflow and language conventions |
-| 2 | [`.agents/rules/README.md`](.agents/rules/README.md) | Index of non-negotiable rules (blocking invariants) |
-| 3 | [`.agents/skills/README.md`](.agents/skills/README.md) | Index of skills / roles and their triggers |
-| 4 | [`.agents/prompts/README.md`](.agents/prompts/README.md) | Index of reusable prompts |
+| File | What you learn there |
+|---|---|
+| [`.agents/prompts/initial-setup/PROMPT.md`](.agents/prompts/initial-setup/PROMPT.md) | Project bootstrap, workflow and language conventions | <!-- @if prompts -->
+| [`.agents/rules/README.md`](.agents/rules/README.md) | Index of non-negotiable rules (blocking invariants) |
+| [`.agents/skills/README.md`](.agents/skills/README.md) | Index of skills / roles and their triggers |
+| [`.agents/prompts/README.md`](.agents/prompts/README.md) | Index of reusable prompts | <!-- @if prompts -->
 
-> The tooling prompt (`.agents/prompts/tooling/PROMPT.md`) and the Ralph Loop
-> (`.agents/prompts/ralph-loop/PROMPT.md`) are **optional** and only exist if
-> this project was configured with them. Read them when present.
+> **Optional prompts installed in this project:** <!-- @if any-optional -->
+> - [`.agents/prompts/tooling/PROMPT.md`](.agents/prompts/tooling/PROMPT.md) — use the repository's own scripts as the single source of truth for commands, tests and checks. <!-- @if tooling -->
+> - [`.agents/prompts/ralph-loop/PROMPT.md`](.agents/prompts/ralph-loop/PROMPT.md) — run the Perceive → Orient → Decide → Act → Record cycle per story. <!-- @if ralph -->
 
 ---
 
@@ -57,6 +68,7 @@ max_lines: 150
 
 ---
 
+<!-- ai-guardrails:if prompts -->
 ## 3. Quick recipe for working here
 
 | Situation | What to do |
@@ -69,7 +81,15 @@ max_lines: 150
 | Doubt about why a decision | Look for the ADR. No ADR = create one |
 
 ---
+<!-- ai-guardrails:endif -->
 
+<!-- ai-guardrails:if prompts -->
 *Conflict between instructions? Always apply in this order:*
-`.agents/prompts/initial-setup/PROMPT.md` → blocking `RULE`s → official kanban →
-this `AGENTS.md`.
+`.agents/prompts/initial-setup/PROMPT.md` → blocking `RULE`s → official kanban → this `AGENTS.md`.
+<!-- ai-guardrails:endif -->
+<!-- ai-guardrails:if no-prompts -->
+*Conflict between instructions? Always apply in this order:*
+blocking `RULE`s → this `AGENTS.md`.
+<!-- ai-guardrails:endif -->
+
+<!-- generated-by: ai-guardrails -->

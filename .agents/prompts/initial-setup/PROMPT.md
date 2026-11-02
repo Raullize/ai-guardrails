@@ -35,6 +35,7 @@ called [PROJECT_NAME].
    - docs/requirements/ — functional and non-functional requirements
    - docs/tasks/ — per-story execution plans
    - docs/deliveries/ — chronological documentation of each delivery
+   - AGENTS.md — single entry point at the project root
    - .agents/rules/ — non-negotiable constraints
    - .agents/skills/ — roles with their own procedures
    - .agents/prompts/ — reusable procedure prompts
